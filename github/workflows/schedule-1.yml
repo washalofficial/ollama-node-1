@@ -1,0 +1,31 @@
+name: Account 1 Schedule (Pakistan 12AM-12PM)
+
+on:
+  schedule:
+    - cron: '0 19 * * *'   # 12 AM PKT start
+    - cron: '0 7 * * *'    # 12 PM PKT stop
+  workflow_dispatch:
+
+jobs:
+  manage-codespace:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get UTC time
+        run: echo "UTC_HOUR=$(date -u +%H)" >> $GITHUB_ENV
+      
+      - name: Manage Codespace
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          CODESPACE_NAME=$(gh codespace list --json name --jq '.[0].name')
+          if [ "$CODESPACE_NAME" != "null" ]; then
+            if [ $UTC_HOUR -eq 19 ]; then
+              echo "Starting codespace at 12 AM PKT"
+              gh codespace start -c $CODESPACE_NAME
+            elif [ $UTC_HOUR -eq 7 ]; then
+              echo "Stopping codespace at 12 PM PKT"
+              gh codespace stop -c $CODESPACE_NAME
+            fi
+          else
+            echo "No codespace found"
+          fi
